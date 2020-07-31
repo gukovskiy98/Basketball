@@ -1,9 +1,5 @@
 // data-mutable-id: MG2_-1350604717 - first quarter , MG3_1215123098 - second quarter, MG4_-514116383 - third quarter, MG5_2051611432 - fourth quarter
 
-// ! Autobet (not for use)
-// let btn = coefBlock.nextElementSibling.firstElementChild;
-// btn.dispatchEvent(new Event("click", { bubbles: true }));
-
 let quarter_duration = 10;
 let latency = 90;
 
@@ -14,13 +10,15 @@ const audioNode = document.getElementById("mybeep");
 // ----------------------------
 
 const log = [];
+const signals = [];
 
 function makeSomeNoise(weight, prevCoef, latestCoef) {
   console.log(`*********`);
   console.log(
     `Weight: ${weight}. Previous coef: ${prevCoef}, coef now: ${latestCoef}`
   );
-  console.log(`BET ON ${latestCoef}`);
+  signals.push({ weight: weight, coef: latestCoef });
+  console.log(`BET ON ${latestCoef}-${latestCoef + 2}`);
   console.log(`*********`);
   audioNode.play();
 }
@@ -58,13 +56,9 @@ function checkForPattern(logArray) {
   if (latestTime >= (quarter_duration - 4) * 60) return;
 
   let previousTime = latestTime - latency;
-  let tempSave;
-  for (let current of logArray) {
-    if (current.time >= previousTime) {
-      tempSave = current;
-      break;
-    }
-  }
+  let tempSave = logArray
+    .filter((elem) => elem.time >= previousTime)
+    .reduceRight((res, elem) => (elem.time < res.time ? elem : res));
   if (!tempSave) return;
   if (latestTime - tempSave.time < latency - 20) return;
   let weight = calcWeight(tempSave.time, latestTime, tempSave.coef, latestCoef);
@@ -79,7 +73,7 @@ function checkForPattern(logArray) {
     `curTime: ${latestTime} curPoints: ${latestPoints} curCoef: ${latestCoef}`
   );
   console.log(`------------`);
-  if (weight < 0.025) return;
+  if (weight < 0.01) return;
 
   makeSomeNoise(weight, tempSave.coef, latestCoef);
 }
