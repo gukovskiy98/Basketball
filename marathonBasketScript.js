@@ -1,31 +1,39 @@
-// ! чувствительность в два раза выше, чем ожидаемое количество очков в минуту (тотал на следующую четверть/10 или 12, в зависимости от лиги)
-// data-mutable-id: MG2_-1350604717 - тотал 1 четверть , MG3_1215123098 - 2 четверть, MG4_-514116383 - 3 четверть, MG5_2051611432 - 4 четверть
+// data-mutable-id: MG2_-1350604717 - first quarter , MG3_1215123098 - second quarter, MG4_-514116383 - third quarter, MG5_2051611432 - fourth quarter
 
+// ! Autobet (not for use)
+// let btn = coefBlock.nextElementSibling.firstElementChild;
+// btn.dispatchEvent(new Event("click", { bubbles: true }));
+
+let quarter_duration = 10;
+let latency = 90;
+
+// --------- BEEPER -----------
 const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>`;
 document.body.insertAdjacentHTML("beforeend", audio);
 const audioNode = document.getElementById("mybeep");
-let sensitivity = 6;
-let quarter_duration = 10;
-
-function getData() {
-  let resText = document
-    .querySelector(".result-row")
-    .textContent.trim()
-    .split(" ")
-    .filter((elem) => elem.length > 1);
-  let timeArray = resText[resText.length - 1].split(":");
-  let timeInSecs = +timeArray[0] * 60 + +timeArray[1]; // время с начала четверти в секундах
-  let points = resText[0].split(":").reduce((sum, elem) => +sum + +elem); // Сумма очков
-  return {
-    time: timeInSecs,
-    points: points,
-  };
-}
+// ----------------------------
 
 const log = [];
 
+function makeSomeNoise(weight, prevCoef, latestCoef) {
+  console.log(`*********`);
+  console.log(
+    `Weight: ${weight}. Previous coef: ${prevCoef}, coef now: ${latestCoef}`
+  );
+  console.log(`BET ON ${latestCoef}`);
+  console.log(`*********`);
+  audioNode.play();
+}
+
 function isEqual(data1, data2) {
   return JSON.stringify(data1) === JSON.stringify(data2);
+}
+
+function calcWeight(x1, x2, y1, y2) {
+  // x2 > x1
+  let tan = (y2 - y1) / (x2 - x1);
+  let weight = (10 * tan) / y1;
+  return weight;
 }
 
 function getOdds() {
@@ -34,30 +42,22 @@ function getOdds() {
     document.querySelector("[data-mutable-id=MG3_1215123098]") ||
     document.querySelector("[data-mutable-id=MG4_-514116383]") ||
     document.querySelector("[data-mutable-id=MG5_2051611432]");
-  if (!block) return;
+  if (!block) return 0;
   let coefs = block
     .querySelectorAll("tbody")[1]
     .querySelectorAll(".coeff-value");
-  let coefBlock = coefs[coefs.length - 2];
+  let coef = coefs[coefs.length - 2].textContent.trim().slice(1, -1);
 
-  // ! Автоставка
-  // let btn = coefBlock.nextElementSibling.firstElementChild;
-  // btn.dispatchEvent(new Event("click", { bubbles: true }));
-
-  let message = `Рекомендуемая ставка Т.М. ${coefBlock.textContent.trim()}`;
-  // ! Алерт убрать при автоставке
-  // alert(message);
-  audioNode.play();
-  console.log(message);
+  return +coef;
 }
 
 function checkForPattern(logArray) {
-  let { time: latestTime, points: latestPoints } = logArray[
+  let { time: latestTime, points: latestPoints, coef: latestCoef } = logArray[
     logArray.length - 1
   ];
   if (latestTime >= (quarter_duration - 4) * 60) return;
 
-  let previousTime = latestTime - 60;
+  let previousTime = latestTime - latency;
   let tempSave;
   for (let current of logArray) {
     if (current.time >= previousTime) {
@@ -66,17 +66,39 @@ function checkForPattern(logArray) {
     }
   }
   if (!tempSave) return;
-  let diff = latestPoints - tempSave.points;
-  console.log(`---`);
+  if (latestTime - tempSave.time < latency - 20) return;
+  let weight = calcWeight(tempSave.time, latestTime, tempSave.coef, latestCoef);
+
+  console.log(`------------`);
   console.log("checking");
-  console.log(`prevTime: ${tempSave.time} prevPoints: ${tempSave.points}`);
-  console.log(`curTime: ${latestTime} curPoints: ${latestPoints}`);
-  console.log(`---`);
-  if (diff < sensitivity) return;
-  getOdds();
-  let message = `Diff: ${diff}. Minute ago: ${tempSave.points}, now: ${latestPoints}`;
-  // alert(message);
-  console.log(message);
+  console.log(`weight: ${weight}`);
+  console.log(
+    `prevTime: ${tempSave.time} prevPoints: ${tempSave.points} prevCoef: ${tempSave.coef}`
+  );
+  console.log(
+    `curTime: ${latestTime} curPoints: ${latestPoints} curCoef: ${latestCoef}`
+  );
+  console.log(`------------`);
+  if (weight < 0.025) return;
+
+  makeSomeNoise(weight, tempSave.coef, latestCoef);
+}
+
+function getData() {
+  let resText = document
+    .querySelector(".result-row")
+    .textContent.trim()
+    .split(" ")
+    .filter((elem) => elem.length > 1);
+  let timeArray = resText[resText.length - 1].split(":");
+  let timeInSecs = +timeArray[0] * 60 + +timeArray[1]; // time from the beginning
+  let points = resText[0].split(":").reduce((sum, elem) => +sum + +elem); // sum
+  let coef = getOdds(); // expecting amount of points
+  return {
+    time: timeInSecs,
+    points: points,
+    coef: coef,
+  };
 }
 
 function fillLog(data) {
@@ -88,15 +110,15 @@ function fillLog(data) {
     return;
   }
   if (isEqual(data, log[log.length - 1])) return;
-  if (log.length === 15) {
+  if (log.length === 30) {
     log.shift();
   }
   log.push(data);
   checkForPattern(log);
 }
 
+// по дефолту quarter_duration = 10, latency = 90
+// quarter_duration = 12
+// latency = 60
+
 setInterval(() => fillLog(getData()), 5000);
-// по дефолту sensitivity = 6, quarter_duration = 10
-// sensitivity =
-// quarter_duration =
-// ставить на четвертую четверть только при явном фаворите
