@@ -2,7 +2,8 @@
 
 let quarter_duration = 10;
 let latency = 90;
-
+let sensitivity = 0.025;
+let timeToStart = latency;
 // --------- BEEPER -----------
 const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>`;
 document.body.insertAdjacentHTML("beforeend", audio);
@@ -11,14 +12,15 @@ const audioNode = document.getElementById("mybeep");
 
 const log = [];
 const signals = [];
+let maxTotal = -1;
 
-function makeSomeNoise(weight, prevCoef, latestCoef) {
+function makeSomeNoise(weight, prevTotal, latestTotal) {
   console.log(`*********`);
   console.log(
-    `Weight: ${weight}. Previous coef: ${prevCoef}, coef now: ${latestCoef}`
+    `Weight: ${weight}. Previous coef: ${prevTotal}, coef now: ${latestTotal}`
   );
-  signals.push({ weight: weight, coef: latestCoef });
-  console.log(`BET ON ${latestCoef}-${latestCoef + 2}`);
+  signals.push({ weight: weight, coef: latestTotal });
+  console.log(`BET ON ${latestTotal}`);
   console.log(`*********`);
   audioNode.play();
 }
@@ -41,41 +43,56 @@ function getOdds() {
     document.querySelector("[data-mutable-id=MG4_-514116383]") ||
     document.querySelector("[data-mutable-id=MG5_2051611432]");
   if (!block) return 0;
-  let coefs = block
+  let totals = block
     .querySelectorAll("tbody")[1]
     .querySelectorAll(".coeff-value");
-  let coef = coefs[coefs.length - 2].textContent.trim().slice(1, -1);
-
-  return +coef;
+  let total = +totals[totals.length - 2].textContent.trim().slice(1, -1);
+  if (total > maxTotal) maxTotal = total;
+  return total;
 }
 
 function checkForPattern(logArray) {
-  let { time: latestTime, points: latestPoints, coef: latestCoef } = logArray[
+  let { time: latestTime, points: latestPoints, total: latestTotal } = logArray[
     logArray.length - 1
   ];
-  if (latestTime >= (quarter_duration - 4) * 60) return;
+  if (latestTime >= (quarter_duration - 4) * 60 || latestTime < timeToStart)
+    return;
 
   let previousTime = latestTime - latency;
-  let tempSave = logArray
+  let previousArray = logArray
     .filter((elem) => elem.time >= previousTime)
-    .reduceRight((res, elem) => (elem.time < res.time ? elem : res));
-  if (!tempSave) return;
-  if (latestTime - tempSave.time < latency - 20) return;
-  let weight = calcWeight(tempSave.time, latestTime, tempSave.coef, latestCoef);
+    .slice(0, -1);
+  let previousTotals = previousArray.map((elem) => elem.total);
+  if (!previousTotals) return;
+  let previousMaxTotal = Math.max(...previousTotals);
+  let previousMinTotal = Math.min(...previousTotals);
+  let previousMinTime =
+    previousArray[previousTotals.lastIndexOf(previousMinTotal)].time;
+  console.log(
+    `DEBUG: previousMaxTotal: ${previousMaxTotal}, previousMinTotal: ${previousMinTotal}, previousMinTime: ${previousMinTime}`
+  );
+  if (latestTotal < previousMaxTotal) return;
+  if (maxTotal > latestTotal) return;
+  let weight = calcWeight(
+    previousMinTime,
+    latestTime,
+    previousMinTotal,
+    latestTotal
+  );
 
   console.log(`------------`);
   console.log("checking");
   console.log(`weight: ${weight}`);
+  // console.log(
+  //   `prevTime: ${tempSave.time} prevPoints: ${tempSave.points} prevTotal: ${tempSave.total}`
+  // );
   console.log(
-    `prevTime: ${tempSave.time} prevPoints: ${tempSave.points} prevCoef: ${tempSave.coef}`
-  );
-  console.log(
-    `curTime: ${latestTime} curPoints: ${latestPoints} curCoef: ${latestCoef}`
+    `curTime: ${latestTime} curPoints: ${latestPoints} curTotal: ${latestTotal}`
   );
   console.log(`------------`);
-  if (weight < 0.01) return;
+  if (weight < sensitivity) return;
 
-  makeSomeNoise(weight, tempSave.coef, latestCoef);
+  makeSomeNoise(weight, previousMaxTotal, latestTotal);
 }
 
 function getData() {
@@ -87,11 +104,11 @@ function getData() {
   let timeArray = resText[resText.length - 1].split(":");
   let timeInSecs = +timeArray[0] * 60 + +timeArray[1]; // time from the beginning
   let points = resText[0].split(":").reduce((sum, elem) => +sum + +elem); // sum
-  let coef = getOdds(); // expecting amount of points
+  let total = getOdds(); // expecting amount of points
   return {
     time: timeInSecs,
     points: points,
-    coef: coef,
+    total: total,
   };
 }
 
@@ -101,6 +118,7 @@ function fillLog(data) {
   }
   if (Object.is(data.time, NaN)) {
     log.splice(0, log.length);
+    maxTotal = -1;
     return;
   }
   if (isEqual(data, log[log.length - 1])) return;
@@ -111,8 +129,10 @@ function fillLog(data) {
   checkForPattern(log);
 }
 
-// по дефолту quarter_duration = 10, latency = 90
+// по дефолту quarter_duration = 10, latency = 90, sensitivity = 0.025, timeToStart = latency
 // quarter_duration = 12
 // latency = 60
+// sensitivity =
+// timeToStart = latency*2
 
 setInterval(() => fillLog(getData()), 5000);
