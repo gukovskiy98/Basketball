@@ -5,7 +5,7 @@ let latency = 90;
 let sensitivity = 0.025;
 let timeToStart = latency;
 // --------- BEEPER -----------
-const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>`;
+const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/button-2.mp3" preload="auto"></audio>`;
 document.body.insertAdjacentHTML("beforeend", audio);
 const audioNode = document.getElementById("mybeep");
 // ----------------------------
@@ -31,6 +31,8 @@ function isEqual(data1, data2) {
 
 function calcWeight(x1, x2, y1, y2) {
   // x2 > x1
+  // Sometimes x2 can be equal to x1, and the result is going to be Infinity, but that is OK.
+  // if (x2 === x1) return 0;
   let tan = (y2 - y1) / (x2 - x1);
   let weight = (10 * tan) / y1;
   return weight;
