@@ -3,7 +3,7 @@
 let quarter_duration = 10;
 let latency = 90;
 let sensitivity = 0.025;
-let timeToStart = latency;
+let timeToStart = 1.5 * latency;
 // --------- BEEPER -----------
 const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/button-2.mp3" preload="auto"></audio>`;
 document.body.insertAdjacentHTML("beforeend", audio);
@@ -17,9 +17,9 @@ let maxTotal = -1;
 function makeSomeNoise(weight, prevTotal, latestTotal) {
   console.log(`*********`);
   console.log(
-    `Weight: ${weight}. Previous coef: ${prevTotal}, coef now: ${latestTotal}`
+    `Weight: ${weight}. Previous total: ${prevTotal}, total now: ${latestTotal}`
   );
-  signals.push({ weight: weight, coef: latestTotal });
+  signals.push({ weight: weight, total: latestTotal });
   console.log(`BET ON ${latestTotal}`);
   console.log(`*********`);
   audioNode.play();
@@ -70,9 +70,9 @@ function checkForPattern(logArray) {
   let previousMinTotal = Math.min(...previousTotals);
   let previousMinTime =
     previousArray[previousTotals.lastIndexOf(previousMinTotal)].time;
-  console.log(
-    `DEBUG: previousMaxTotal: ${previousMaxTotal}, previousMinTotal: ${previousMinTotal}, previousMinTime: ${previousMinTime}`
-  );
+  // console.log(
+  //   `DEBUG: previousMaxTotal: ${previousMaxTotal}, previousMinTotal: ${previousMinTotal}, previousMinTime: ${previousMinTime}`
+  // );
   if (latestTotal < previousMaxTotal) return;
   if (maxTotal > latestTotal) return;
   let weight = calcWeight(
@@ -82,16 +82,13 @@ function checkForPattern(logArray) {
     latestTotal
   );
 
-  console.log(`------------`);
-  console.log("checking");
-  console.log(`weight: ${weight}`);
+  // console.log(`------------`);
+  // console.log("checking");
+  // console.log(`weight: ${weight}`);
   // console.log(
-  //   `prevTime: ${tempSave.time} prevPoints: ${tempSave.points} prevTotal: ${tempSave.total}`
+  //   `curTime: ${latestTime} curPoints: ${latestPoints} curTotal: ${latestTotal}`
   // );
-  console.log(
-    `curTime: ${latestTime} curPoints: ${latestPoints} curTotal: ${latestTotal}`
-  );
-  console.log(`------------`);
+  // console.log(`------------`);
   if (weight < sensitivity) return;
 
   makeSomeNoise(weight, previousMaxTotal, latestTotal);
@@ -106,7 +103,7 @@ function getData() {
   let timeArray = resText[resText.length - 1].split(":");
   let timeInSecs = +timeArray[0] * 60 + +timeArray[1]; // time from the beginning
   let points = resText[0].split(":").reduce((sum, elem) => +sum + +elem); // sum
-  let total = getOdds(); // expecting amount of points
+  let total = getOdds(); // expecting total
   return {
     time: timeInSecs,
     points: points,
@@ -131,7 +128,7 @@ function fillLog(data) {
   checkForPattern(log);
 }
 
-// по дефолту quarter_duration = 10, latency = 90, sensitivity = 0.025, timeToStart = latency
+// по дефолту quarter_duration = 10, latency = 90, sensitivity = 0.025, timeToStart = 1.5*latency
 // quarter_duration = 12
 // latency = 60
 // sensitivity =
