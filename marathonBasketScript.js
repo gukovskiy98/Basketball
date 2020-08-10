@@ -41,6 +41,25 @@ function makeSomeNoise(prevTotal, latestTotal, latestTime, param) {
   console.log(`Diff: ${diff}`);
   console.log(`Time: ${time}`);
   console.log(`BET ON ${param} than ${latestTotal}`);
+  if (param === "higher") {
+    let tempArr = document
+      .querySelector(".result-row")
+      .textContent.trim()
+      .split(" ")
+      .filter((elem) => elem.length > 1);
+    let currentPointsString = tempArr[tempArr.length - 2];
+    if (currentPointsString[currentPointsString.length - 1] === ")") {
+      currentPointsString = currentPointsString.slice(0, -1);
+    }
+    let currentPoints = currentPointsString
+      .split(":")
+      .reduce((sum, elem) => +sum + +elem);
+    let pointsToReach =
+      ((latestTotal + 1 - currentPoints) /
+        (quarter_duration * 60 - latestTime)) *
+      60;
+    console.log(`Has to be scored: ${pointsToReach} in a minute`);
+  }
   console.log(`*********`);
 
   signals.push({
