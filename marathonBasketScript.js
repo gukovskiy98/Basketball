@@ -3,7 +3,8 @@
 let quarter_duration = 10;
 let latency = 61;
 let timeBeforeEnd = 2;
-let sensitivity = 5;
+let sensitivityForLower = 6;
+let sensitivityForHigher = 4;
 // --------- BEEPER -----------
 const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/button-2.mp3" preload="auto"></audio>`;
 document.body.insertAdjacentHTML("beforeend", audio);
@@ -90,11 +91,11 @@ function checkForPattern(logArray) {
   let previousMaxTotal = Math.max(...previousTotals);
   // if (maxTotal > latestTotal) return;
   if (
-    latestTotal - previousMinTotal < sensitivity &&
-    previousMaxTotal - latestTotal < sensitivity
+    latestTotal - previousMinTotal < sensitivityForLower &&
+    previousMaxTotal - latestTotal < sensitivityForHigher
   )
     return;
-  if (latestTotal - previousMinTotal >= sensitivity) {
+  if (latestTotal - previousMinTotal >= sensitivityForLower) {
     makeSomeNoise(previousMinTotal, latestTotal, latestTime, "lower");
   } else {
     makeSomeNoise(previousMaxTotal, latestTotal, latestTime, "higher");
@@ -138,10 +139,11 @@ if (Notification.permission !== "granted") {
   Notification.requestPermission();
 }
 
-// по дефолту timeBeforeEnd = 2, latency = 61, quarter_duration = 10, sensitivity = 5
+// по дефолту timeBeforeEnd = 2, latency = 61, quarter_duration = 10, sensitivityForLower = 6, sensitivityForHigher = 4
 // timeBeforeEnd = 3
 // latency =
 // quarter_duration = 12
-// sensitivity = 6
+// sensitivityForLower =
+// sensitivityForHigher =
 
 setInterval(() => fillLog(getData()), 5000);
