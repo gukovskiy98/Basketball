@@ -40,6 +40,7 @@ function makeSomeNoise(prevTotal, latestTotal, latestTime, param) {
   console.log(`Previous extremum: ${prevTotal}, total now: ${latestTotal}`);
   console.log(`Diff: ${diff}`);
   console.log(`Time: ${time}`);
+  console.log(`Max total: ${maxTotal}, min total: ${minTotal}`);
   console.log(`BET ON ${param} than ${latestTotal}`);
   if (param === "higher") {
     let tempArr = document
