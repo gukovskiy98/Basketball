@@ -29,7 +29,7 @@ function secsToMins(time) {
 
 function showNotification(time, diff, param, latestTotal) {
   new Notification(
-    `${team1} - ${team2}\nTime: ${time}. Diff: ${diff}.\nBET ON: ${param} than ${latestTotal}`
+    `${team1} - ${team2}. \nDiff: ${diff.toFixed(2)}. Time: ${time}.\nBET ON: ${param} than ${latestTotal}`
   );
 }
 
@@ -42,24 +42,25 @@ function makeSomeNoise(prevTotal, latestTotal, latestTime, param) {
   console.log(`Time: ${time}`);
   console.log(`Max total: ${maxTotal}, min total: ${minTotal}`);
   console.log(`BET ON ${param} than ${latestTotal}`);
+  let tempArr = document
+    .querySelector(".result-row")
+    .textContent.trim()
+    .split(" ")
+    .filter((elem) => elem.length > 1);
+  let currentPointsString = tempArr[tempArr.length - 2];
+  if (currentPointsString[currentPointsString.length - 1] === ")") {
+    currentPointsString = currentPointsString.slice(0, -1);
+  }
+  let currentPoints = currentPointsString
+    .split(":")
+    .reduce((sum, elem) => +sum + +elem);
+  let pointsToReach =
+    ((latestTotal - currentPoints) / (quarter_duration * 60 - latestTime)) *
+    60;
   if (param === "higher") {
-    let tempArr = document
-      .querySelector(".result-row")
-      .textContent.trim()
-      .split(" ")
-      .filter((elem) => elem.length > 1);
-    let currentPointsString = tempArr[tempArr.length - 2];
-    if (currentPointsString[currentPointsString.length - 1] === ")") {
-      currentPointsString = currentPointsString.slice(0, -1);
-    }
-    let currentPoints = currentPointsString
-      .split(":")
-      .reduce((sum, elem) => +sum + +elem);
-    let pointsToReach =
-      ((latestTotal + 1 - currentPoints) /
-        (quarter_duration * 60 - latestTime)) *
-      60;
     console.log(`Has to be scored: ${pointsToReach} in a minute`);
+  } else {
+    console.log(`Not more than: ${pointsToReach} in a minute`);
   }
   console.log(`*********`);
 
