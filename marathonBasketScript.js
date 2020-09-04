@@ -4,6 +4,7 @@ let quarter_duration = 10;
 let latency = 61;
 let timeBeforeEnd = 2;
 let sensitivityForLowerThan = 5.5;
+let expectedPointsInMinute = 4.8;
 // --------- BEEPER -----------
 const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/button-2.mp3" preload="auto"></audio>`;
 document.body.insertAdjacentHTML("beforeend", audio);
@@ -14,7 +15,10 @@ const log = [];
 const signals = [];
 let maxTotal = -1;
 let minTotal = 999;
-const teamsArr = document.querySelectorAll(".live-today-member-name");
+let teamsArr = document.querySelectorAll(".live-today-member-name");
+if (!teamsArr.length) {
+  teamsArr = document.querySelectorAll(".live-member-name");
+}
 const team1 = teamsArr[0].textContent.trim();
 const team2 = teamsArr[1].textContent.trim();
 
@@ -90,7 +94,7 @@ function checkForPattern(logArray) {
     .reduce((sum, elem) => +sum + +elem);
   let pointsToReach =
     ((latestTotal - currentPoints) / (quarter_duration * 60 - latestTime)) * 60;
-  if (pointsToReach < 4.8) return;
+  if (pointsToReach < expectedPointsInMinute) return;
   makeSomeNoise(previousMinTotal, latestTotal, latestTime, pointsToReach);
 }
 
@@ -151,10 +155,11 @@ if (Notification.permission !== "granted") {
   Notification.requestPermission();
 }
 
-// по дефолту timeBeforeEnd = 2, latency = 61, quarter_duration = 10, sensitivityForLowerThan = 5
-// timeBeforeEnd = 3
+// по дефолту latency = 61, timeBeforeEnd = 2, quarter_duration = 10, sensitivityForLowerThan = 5.5, expectedPointsInMinute = 4.8
 // latency =
+// timeBeforeEnd = 3
 // quarter_duration = 12
-// sensitivityForLowerThan =
+// sensitivityForLowerThan = 7
+// expectedPointsInMinute = 6
 
 setInterval(() => fillLog(getData()), 5000);
