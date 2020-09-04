@@ -3,8 +3,7 @@
 let quarter_duration = 10;
 let latency = 61;
 let timeBeforeEnd = 2;
-let sensitivityForLower = 6;
-let sensitivityForHigher = 4;
+let sensitivityForLowerThan = 5.5;
 // --------- BEEPER -----------
 const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/button-2.mp3" preload="auto"></audio>`;
 document.body.insertAdjacentHTML("beforeend", audio);
@@ -27,13 +26,15 @@ function secsToMins(time) {
   return `${mins}:${secs}`;
 }
 
-function showNotification(time, diff, param, latestTotal) {
+function showNotification(time, diff, latestTotal, pointsToReach) {
   new Notification(
-    `${team1} - ${team2}. \nDiff: ${diff.toFixed(2)}. Time: ${time}.\nBET ON: ${param} than ${latestTotal}`
+    `${team1}-${team2}.Ptr:${pointsToReach.toFixed(
+      2
+    )}.Diff:${diff}.Time:${time}.BET ON:lower than ${latestTotal}`
   );
 }
 
-function makeSomeNoise(prevTotal, latestTotal, latestTime, param) {
+function makeSomeNoise(prevTotal, latestTotal, latestTime, pointsToReach) {
   let time = secsToMins(latestTime);
   let diff = latestTotal - prevTotal;
   console.log(`*********`);
@@ -41,7 +42,40 @@ function makeSomeNoise(prevTotal, latestTotal, latestTime, param) {
   console.log(`Diff: ${diff}`);
   console.log(`Time: ${time}`);
   console.log(`Max total: ${maxTotal}, min total: ${minTotal}`);
-  console.log(`BET ON ${param} than ${latestTotal}`);
+  console.log(`BET ON lower than ${latestTotal}`);
+
+  console.log(`Not more than: ${pointsToReach} in a minute`);
+  console.log(`*********`);
+
+  signals.push({
+    total: latestTotal,
+    time: latestTime,
+    diff: diff,
+    ptr: pointsToReach,
+  });
+  audioNode.play();
+  showNotification(time, diff, latestTotal, pointsToReach);
+}
+
+function checkForPattern(logArray) {
+  let { time: latestTime, total: latestTotal } = logArray[logArray.length - 1];
+  if (
+    latestTime >= (quarter_duration - 4) * 60 ||
+    latestTime < (quarter_duration - 4 - timeBeforeEnd) * 60
+  )
+    return;
+
+  let previousTime = latestTime - latency;
+  let previousTotals = logArray
+    .filter((elem) => elem.time >= previousTime)
+    .slice(0, -1)
+    .map((elem) => elem.total);
+
+  if (!previousTotals) return;
+  let previousMinTotal = Math.min(...previousTotals);
+  // if (maxTotal > latestTotal) return;
+  if (latestTotal - previousMinTotal < sensitivityForLowerThan) return;
+
   let tempArr = document
     .querySelector(".result-row")
     .textContent.trim()
@@ -55,22 +89,9 @@ function makeSomeNoise(prevTotal, latestTotal, latestTime, param) {
     .split(":")
     .reduce((sum, elem) => +sum + +elem);
   let pointsToReach =
-    ((latestTotal - currentPoints) / (quarter_duration * 60 - latestTime)) *
-    60;
-  if (param === "higher") {
-    console.log(`Has to be scored: ${pointsToReach} in a minute`);
-  } else {
-    console.log(`Not more than: ${pointsToReach} in a minute`);
-  }
-  console.log(`*********`);
-
-  signals.push({
-    total: latestTotal,
-    time: latestTime,
-    diff: diff,
-  });
-  audioNode.play();
-  showNotification(time, diff, param, latestTotal);
+    ((latestTotal - currentPoints) / (quarter_duration * 60 - latestTime)) * 60;
+  if (pointsToReach < 4.8) return;
+  makeSomeNoise(previousMinTotal, latestTotal, latestTime, pointsToReach);
 }
 
 function isEqual(data1, data2) {
@@ -91,36 +112,6 @@ function getOdds() {
   if (total > maxTotal) maxTotal = total;
   if (total < minTotal) minTotal = total;
   return total;
-}
-
-function checkForPattern(logArray) {
-  let { time: latestTime, total: latestTotal } = logArray[logArray.length - 1];
-  if (
-    latestTime >= (quarter_duration - 4) * 60 ||
-    latestTime <= (quarter_duration - 4 - timeBeforeEnd) * 60
-  )
-    return;
-
-  let previousTime = latestTime - latency;
-  let previousTotals = logArray
-    .filter((elem) => elem.time >= previousTime)
-    .slice(0, -1)
-    .map((elem) => elem.total);
-
-  if (!previousTotals) return;
-  let previousMinTotal = Math.min(...previousTotals);
-  let previousMaxTotal = Math.max(...previousTotals);
-  // if (maxTotal > latestTotal) return;
-  if (
-    latestTotal - previousMinTotal < sensitivityForLower &&
-    previousMaxTotal - latestTotal < sensitivityForHigher
-  )
-    return;
-  if (latestTotal - previousMinTotal >= sensitivityForLower) {
-    makeSomeNoise(previousMinTotal, latestTotal, latestTime, "lower");
-  } else {
-    makeSomeNoise(previousMaxTotal, latestTotal, latestTime, "higher");
-  }
 }
 
 function getData() {
@@ -160,11 +151,10 @@ if (Notification.permission !== "granted") {
   Notification.requestPermission();
 }
 
-// по дефолту timeBeforeEnd = 2, latency = 61, quarter_duration = 10, sensitivityForLower = 6, sensitivityForHigher = 4
+// по дефолту timeBeforeEnd = 2, latency = 61, quarter_duration = 10, sensitivityForLowerThan = 5
 // timeBeforeEnd = 3
 // latency =
 // quarter_duration = 12
-// sensitivityForLower =
-// sensitivityForHigher =
+// sensitivityForLowerThan =
 
 setInterval(() => fillLog(getData()), 5000);
