@@ -1,10 +1,17 @@
-// data-mutable-id: MG2_-1350604717 - first quarter , MG3_1215123098 - second quarter, MG4_-514116383 - third quarter, MG5_2051611432 - fourth quarter
+// data-mutable-id: MG2_-1350604717 - первая четверть , MG3_1215123098 - вторая четверть, MG4_-514116383 - третья четверть, MG5_2051611432 - четвертая четверть
 
 let quarter_duration = 10;
 let latency = 61;
 let timeBeforeEnd = 2;
 let sensitivityForLowerThan = 5.5;
 let expectedPointsInMinute = 4.8;
+console.log(`Константы:`);
+console.log(`quarter_duration: ${quarter_duration}`);
+console.log(`latency: ${latency}`);
+console.log(`timeBeforeEnd: ${timeBeforeEnd}`);
+console.log(`sensitivityForLowerThan: ${sensitivityForLowerThan}`);
+console.log(`expectedPointsInMinute: ${expectedPointsInMinute}`);
+console.log(`-------------\n`);
 // --------- BEEPER -----------
 const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/button-2.mp3" preload="auto"></audio>`;
 document.body.insertAdjacentHTML("beforeend", audio);
@@ -21,6 +28,7 @@ if (!teamsArr.length) {
 }
 const team1 = teamsArr[0].textContent.trim();
 const team2 = teamsArr[1].textContent.trim();
+new Notification(`${team1}-${team2}: скрипт работает`);
 
 function secsToMins(time) {
   let mins = Math.floor(time / 60);
@@ -32,9 +40,9 @@ function secsToMins(time) {
 
 function showNotification(time, diff, latestTotal, pointsToReach) {
   new Notification(
-    `${team1}-${team2}.Ptr:${pointsToReach.toFixed(
+    `${team1}-${team2}.\nОчков/мин:${pointsToReach.toFixed(
       2
-    )}.Diff:${diff}.Time:${time}.BET ON:lower than ${latestTotal}`
+    )}.Разница:${diff}.Время:${time}.\nСтавка:меньше,чем ${latestTotal}`
   );
 }
 
@@ -42,13 +50,17 @@ function makeSomeNoise(prevTotal, latestTotal, latestTime, pointsToReach) {
   let time = secsToMins(latestTime);
   let diff = latestTotal - prevTotal;
   console.log(`*********`);
-  console.log(`Previous extremum: ${prevTotal}, total now: ${latestTotal}`);
-  console.log(`Diff: ${diff}`);
-  console.log(`Time: ${time}`);
-  console.log(`Max total: ${maxTotal}, min total: ${minTotal}`);
-  console.log(`BET ON lower than ${latestTotal}`);
+  console.log(
+    `Минимальный тотал за ${latency} сек: ${prevTotal}, тотал сейчас: ${latestTotal}`
+  );
+  console.log(`Разница: ${diff}`);
+  console.log(`Время: ${time}`);
+  console.log(
+    `За весь лог - максимальный тотал: ${maxTotal}, минимальный тотал: ${minTotal}`
+  );
+  console.log(`Ставка: меньше, чем ${latestTotal}`);
 
-  console.log(`Not more than: ${pointsToReach} in a minute`);
+  console.log(`Не больше, чем: ${pointsToReach} очков в минуту`);
   console.log(`*********`);
 
   signals.push({
