@@ -3,8 +3,8 @@
 let quarter_duration = 10;
 let latency = 61;
 let timeBeforeEnd = 2;
-let sensitivityForLowerThan = 5.5;
-let expectedPointsInMinute = 4.8;
+let sensitivityForLowerThan = 4.5;
+let expectedPointsInMinute = 4.6;
 console.log(`Константы:`);
 console.log(`quarter_duration: ${quarter_duration}`);
 console.log(`latency: ${latency}`);
@@ -40,7 +40,7 @@ function secsToMins(time) {
 
 function showNotification(time, diff, latestTotal, pointsToReach) {
   new Notification(
-    `${team1}-${team2}.\nОчков/мин:${pointsToReach.toFixed(
+    `$Очков/мин:${pointsToReach.toFixed(
       2
     )}.Разница:${diff}.Время:${time}.\nСтавка:меньше,чем ${latestTotal}`
   );
@@ -74,8 +74,11 @@ function makeSomeNoise(prevTotal, latestTotal, latestTime, pointsToReach) {
 }
 
 function checkForPattern(logArray) {
-  let { time: latestTime, total: latestTotal } = logArray[logArray.length - 1];
+  let { time: latestTime, total: latestTotal, ptr: pointsToReach } = logArray[
+    logArray.length - 1
+  ];
   if (
+    pointsToReach < expectedPointsInMinute ||
     latestTime >= (quarter_duration - 4) * 60 ||
     latestTime < (quarter_duration - 4 - timeBeforeEnd) * 60
   )
@@ -91,22 +94,6 @@ function checkForPattern(logArray) {
   let previousMinTotal = Math.min(...previousTotals);
   // if (maxTotal > latestTotal) return;
   if (latestTotal - previousMinTotal < sensitivityForLowerThan) return;
-
-  let tempArr = document
-    .querySelector(".result-row")
-    .textContent.trim()
-    .split(" ")
-    .filter((elem) => elem.length > 1);
-  let currentPointsString = tempArr[tempArr.length - 2];
-  if (currentPointsString[currentPointsString.length - 1] === ")") {
-    currentPointsString = currentPointsString.slice(0, -1);
-  }
-  let currentPoints = currentPointsString
-    .split(":")
-    .reduce((sum, elem) => +sum + +elem);
-  let pointsToReach =
-    ((latestTotal - currentPoints) / (quarter_duration * 60 - latestTime)) * 60;
-  if (pointsToReach < expectedPointsInMinute) return;
   makeSomeNoise(previousMinTotal, latestTotal, latestTime, pointsToReach);
 }
 
@@ -139,9 +126,26 @@ function getData() {
   let timeArray = resText[resText.length - 1].split(":");
   let timeInSecs = +timeArray[0] * 60 + +timeArray[1]; // time from the beginning
   let total = getOdds(); // expecting total
+
+  let tempArr = document
+    .querySelector(".result-row")
+    .textContent.trim()
+    .split(" ")
+    .filter((elem) => elem.length > 1);
+  let currentPointsString = tempArr[tempArr.length - 2];
+  if (currentPointsString[currentPointsString.length - 1] === ")") {
+    currentPointsString = currentPointsString.slice(0, -1);
+  }
+  let currentPoints = currentPointsString
+    .split(":")
+    .reduce((sum, elem) => +sum + +elem);
+  let pointsToReach =
+    ((total - currentPoints) / (quarter_duration * 60 - timeInSecs)) * 60;
+
   return {
     time: timeInSecs,
     total: total,
+    ptr: pointsToReach,
   };
 }
 
