@@ -40,7 +40,7 @@ function secsToMins(time) {
 
 function showNotification(time, diff, latestTotal, pointsToReach) {
   new Notification(
-    `$Очков/мин:${pointsToReach.toFixed(
+    `Очков/мин:${pointsToReach.toFixed(
       2
     )}.Разница:${diff}.Время:${time}.\nСтавка:меньше,чем ${latestTotal}`
   );
