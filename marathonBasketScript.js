@@ -3,16 +3,12 @@
 let quarter_duration = 10;
 let latency = 61;
 let timeBeforeEnd = 2;
-console.log(`Константы:`);
-console.log(`quarter_duration: ${quarter_duration}`);
-console.log(`latency: ${latency}`);
-console.log(`timeBeforeEnd: ${timeBeforeEnd}`);
-console.log(`-------------\n`);
-// --------- BEEPER -----------
-// const audio = `<audio id="mybeep" src="https://www.soundjay.com/button/button-2.mp3" preload="auto"></audio>`;
-// document.body.insertAdjacentHTML("beforeend", audio);
-// const audioNode = document.getElementById("mybeep");
-// ----------------------------
+let flag = true;
+console.log('Константы:');
+console.log('quarter_duration: ' + quarter_duration);
+console.log('latency: ' + latency);
+console.log('timeBeforeEnd: ' + timeBeforeEnd);
+console.log('-------------');
 
 const log = [];
 const signals = [];
@@ -24,40 +20,34 @@ if (!teamsArr.length) {
 }
 const team1 = teamsArr[0].textContent.trim();
 const team2 = teamsArr[1].textContent.trim();
-new Notification(`${team1}-${team2}: скрипт работает`);
+document.head.querySelector('title').textContent = team1 + ' - ' + team2;
+new Notification(team1 + '-' + team2 + ': скрипт работает');
 
 function secsToMins(time) {
   let mins = Math.floor(time / 60);
   let secs = time - mins * 60;
-  if (mins < 10) mins = `0${mins}`;
-  if (secs < 10) secs = `0${secs}`;
-  return `${mins}:${secs}`;
+  if (mins < 10) mins = '0' + mins;
+  if (secs < 10) secs = '0' + secs;
+  return mins + ':' + secs;
 }
 
 function showNotification(time, diff, latestTotal, pointsToReach) {
   new Notification(
-    `Очков/мин:${pointsToReach.toFixed(
-      2
-    )}.Разница:${diff}.Время:${time}.\nСтавка:меньше,чем ${latestTotal}`
-  );
+    'Очков/мин:' + (pointsToReach.toFixed(2)) + '.Разница:' + diff + '.Время:' + time + '.\nСтавка:меньше,чем ' + latestTotal);
 }
 
 function makeSomeNoise(prevTotal, latestTotal, latestTime, pointsToReach) {
   let time = secsToMins(latestTime);
   let diff = latestTotal - prevTotal;
-  console.log(`*********`);
-  console.log(
-    `Минимальный тотал за ${latency} сек: ${prevTotal}, тотал сейчас: ${latestTotal}`
-  );
-  console.log(`Разница: ${diff}`);
-  console.log(`Время: ${time}`);
-  console.log(
-    `За весь лог - максимальный тотал: ${maxTotal}, минимальный тотал: ${minTotal}`
-  );
-  console.log(`Ставка: меньше, чем ${latestTotal}`);
+  console.log('*********');
+  console.log('Минимальный тотал за ' + latency + ' сек: ' + prevTotal + ', тотал сейчас: ' + latestTotal);
+  console.log('Разница: ' + diff);
+  console.log('Время: ' + time);
+  console.log('За весь лог - максимальный тотал: ' + maxTotal + ', минимальный тотал: ' + minTotal);
+  console.log('Ставка: меньше, чем ' + latestTotal);
 
-  console.log(`Не больше, чем: ${pointsToReach} очков в минуту`);
-  console.log(`*********`);
+  console.log('Не больше, чем: ' + pointsToReach + ' очков в минуту');
+  console.log('*********');
 
   signals.push({
     total: latestTotal,
@@ -65,7 +55,6 @@ function makeSomeNoise(prevTotal, latestTotal, latestTime, pointsToReach) {
     diff: diff,
     ptr: pointsToReach,
   });
-  audioNode.play();
   showNotification(time, diff, latestTotal, pointsToReach);
 }
 
@@ -155,6 +144,10 @@ function fillLog(data) {
     log.shift();
   }
   log.push(data);
+  if (data.time >= 360 && flag) {
+    console.log(log)
+    flag = false;
+  }
   checkForPattern(log);
 }
 
@@ -162,10 +155,9 @@ if (Notification.permission !== "granted") {
   Notification.requestPermission();
 }
 
-// по дефолту latency = 61, timeBeforeEnd = 2, quarter_duration = 10, sensitivityForLowerThan = 5.5
+// по дефолту latency = 61, timeBeforeEnd = 2, quarter_duration = 10
 // latency =
-// timeBeforeEnd = 3
-// quarter_duration = 12
-// sensitivityForLowerThan = 7
+// timeBeforeEnd = 
+// quarter_duration = 
 
 setInterval(() => fillLog(getData()), 5000);
